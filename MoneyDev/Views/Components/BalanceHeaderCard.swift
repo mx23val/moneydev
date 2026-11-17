@@ -5,7 +5,7 @@ public struct BalanceHeaderCard: View {
     let onTransferClick: () -> Void
     let onAddExpenseClick: () -> Void
     let onAddIncomeClick: () -> Void
-    let onVoiceClick: () -> Void
+    let onVoiceClick: (() -> Void)?
     
     private var activeTheme: AppColorTheme {
         AppColorTheme.fromId(viewModel.financialSummary.themeColorId)
@@ -16,13 +16,21 @@ public struct BalanceHeaderCard: View {
         onTransferClick: @escaping () -> Void,
         onAddExpenseClick: @escaping () -> Void,
         onAddIncomeClick: @escaping () -> Void,
-        onVoiceClick: @escaping () -> Void
+        onVoiceClick: (() -> Void)? = nil
     ) {
         self.viewModel = viewModel
         self.onTransferClick = onTransferClick
         self.onAddExpenseClick = onAddExpenseClick
         self.onAddIncomeClick = onAddIncomeClick
         self.onVoiceClick = onVoiceClick
+    }
+    
+    private var activeWalletNumber: Int {
+        let activeId = viewModel.activeWallet?.id ?? viewModel.financialSummary.activeWalletId
+        if let index = viewModel.wallets.firstIndex(where: { $0.id == activeId }) {
+            return index + 1
+        }
+        return 1
     }
     
     public var body: some View {
@@ -32,14 +40,14 @@ public struct BalanceHeaderCard: View {
                 HStack(spacing: 8) {
                     Image(systemName: "wallet.pass.fill")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(activeTheme.primary)
+                        .foregroundStyle(activeTheme.accentIconColor)
                     
                     Text(viewModel.financialSummary.activeWalletName)
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(AppColors.textPrimary)
                     
                     if viewModel.wallets.count > 1 {
-                        Text("(\(viewModel.wallets.count))")
+                        Text("(\(activeWalletNumber))")
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(AppColors.textSecondary)
                     }
@@ -67,33 +75,35 @@ public struct BalanceHeaderCard: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(AppColors.textSecondary)
                 
-                if viewModel.isBalanceHidden {
-                    Text("••••••••")
-                        .font(.system(size: 32, weight: .black, design: .rounded))
-                        .foregroundStyle(AppColors.textPrimary)
-                } else {
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text(viewModel.financialSummary.currencySymbol)
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundStyle(activeTheme.primary)
-                        
-                        Text(FormatHelper.formatCurrency(viewModel.financialSummary.currentBalance))
-                            .font(.system(size: 34, weight: .black, design: .rounded))
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(viewModel.financialSummary.currencySymbol)
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundStyle(activeTheme.accentIconColor)
+                    
+                    if viewModel.isBalanceHidden {
+                        Text("******")
+                            .font(.system(size: 38, weight: .black, design: .rounded))
                             .foregroundStyle(AppColors.textPrimary)
+                    } else {
+                        Text(FormatHelper.formatCurrency(viewModel.financialSummary.currentBalance))
+                            .font(.system(size: 44, weight: .black, design: .rounded))
+                            .foregroundStyle(AppColors.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
             // Income / Expense Summary Badges
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 // Total Income
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     Circle()
                         .fill(AppColors.incomeEmerald.opacity(0.2))
                         .frame(width: 32, height: 32)
                         .overlay {
-                            Image(systemName: "arrow.down.left")
+                            Image(systemName: "arrow.up.right")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(AppColors.incomeEmerald)
                         }
@@ -103,10 +113,11 @@ public struct BalanceHeaderCard: View {
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(AppColors.textSecondary)
                         
-                        Text(viewModel.isBalanceHidden ? "••••" : "+\(viewModel.financialSummary.currencySymbol)\(FormatHelper.formatCurrency(viewModel.financialSummary.totalIncome))")
+                        Text(viewModel.isBalanceHidden ? "+\(viewModel.financialSummary.currencySymbol) ****" : "+\(viewModel.financialSummary.currencySymbol)\(FormatHelper.formatCurrency(viewModel.financialSummary.totalIncome))")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(AppColors.incomeEmeraldLight)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.75)
                     }
                 }
                 .padding(.horizontal, 10)
@@ -116,12 +127,12 @@ public struct BalanceHeaderCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 
                 // Total Expense
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     Circle()
                         .fill(AppColors.expenseRose.opacity(0.2))
                         .frame(width: 32, height: 32)
                         .overlay {
-                            Image(systemName: "arrow.up.right")
+                            Image(systemName: "arrow.down.right")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(AppColors.expenseRose)
                         }
@@ -131,10 +142,11 @@ public struct BalanceHeaderCard: View {
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(AppColors.textSecondary)
                         
-                        Text(viewModel.isBalanceHidden ? "••••" : "-\(viewModel.financialSummary.currencySymbol)\(FormatHelper.formatCurrency(viewModel.financialSummary.totalExpense))")
+                        Text(viewModel.isBalanceHidden ? "-\(viewModel.financialSummary.currencySymbol) ****" : "-\(viewModel.financialSummary.currencySymbol)\(FormatHelper.formatCurrency(viewModel.financialSummary.totalExpense))")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(AppColors.expenseRoseLight)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.75)
                     }
                 }
                 .padding(.horizontal, 10)
@@ -144,86 +156,78 @@ public struct BalanceHeaderCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             
-            // Quick Actions Buttons Row
-            HStack(spacing: 10) {
-                // Botón Dictado por Voz
-                Button(action: onVoiceClick) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "mic.fill")
-                            .font(.system(size: 14, weight: .bold))
-                        Text("Voz")
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(
-                        LinearGradient(colors: activeTheme.gradient, startPoint: .leading, endPoint: .trailing)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
+            // Fila de 3 Acciones Rápidas Proporcionadas (Gasto, Ingreso, Transferir)
+            HStack(spacing: 8) {
+                // 1. Botón Gasto
+                actionCardButton(
+                    title: "Gasto",
+                    icon: "minus.circle.fill",
+                    textColor: AppColors.expenseRoseLight,
+                    bgColor: AppColors.expenseBg.opacity(0.65),
+                    borderColor: AppColors.expenseRose.opacity(0.4),
+                    action: onAddExpenseClick
+                )
                 
-                // Botón Gasto
-                Button(action: onAddExpenseClick) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "minus.circle.fill")
-                            .font(.system(size: 14, weight: .bold))
-                        Text("Gasto")
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                    .foregroundStyle(AppColors.expenseRoseLight)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(AppColors.expenseBg.opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(AppColors.expenseRose.opacity(0.4), lineWidth: 1)
-                    )
-                }
+                // 2. Botón Ingreso
+                actionCardButton(
+                    title: "Ingreso",
+                    icon: "plus.circle.fill",
+                    textColor: AppColors.incomeEmeraldLight,
+                    bgColor: AppColors.incomeBg.opacity(0.65),
+                    borderColor: AppColors.incomeEmerald.opacity(0.4),
+                    action: onAddIncomeClick
+                )
                 
-                // Botón Ingreso
-                Button(action: onAddIncomeClick) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 14, weight: .bold))
-                        Text("Ingreso")
-                            .font(.system(size: 13, weight: .bold))
-                    }
-                    .foregroundStyle(AppColors.incomeEmeraldLight)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(AppColors.incomeBg.opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(AppColors.incomeEmerald.opacity(0.4), lineWidth: 1)
-                    )
-                }
-                
-                // Botón Transferir
-                Button(action: onTransferClick) {
-                    Image(systemName: "arrow.left.arrow.right")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(AppColors.textPrimary)
-                        .frame(width: 42, height: 42)
-                        .background(AppColors.navySurfaceVariant.opacity(0.8))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(AppColors.cardBorderNavy, lineWidth: 1)
-                        )
-                }
+                // 3. Botón Transferir
+                actionCardButton(
+                    title: "Transferir",
+                    icon: "arrow.left.arrow.right",
+                    textColor: activeTheme.accentIconColor,
+                    bgColor: activeTheme == .electricBlack ? Color(hex: "#1E293B").opacity(0.5) : activeTheme.primary.opacity(0.12),
+                    borderColor: activeTheme == .electricBlack ? Color.white.opacity(0.15) : activeTheme.primary.opacity(0.35),
+                    action: onTransferClick
+                )
             }
         }
         .padding(18)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(AppColors.darkNavySurface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(AppColors.cardBorderNavy, lineWidth: 1.2)
-                )
+            ThemedCardBackgroundView(theme: activeTheme, cornerRadius: 20)
         )
+        .shadow(
+            color: Color.black.opacity(0.35),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
+    }
+    
+    // MARK: - Helper para Botones de Acción Rápida con Proporción Perfecta (1/3 Ancho)
+    private func actionCardButton(
+        title: String,
+        icon: String,
+        textColor: Color,
+        bgColor: Color,
+        borderColor: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 13, weight: .bold))
+                
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .contrastTextOutline()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(textColor)
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .background(bgColor)
+            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: 1.5)
+        }
+        .buttonStyle(.plain)
     }
 }

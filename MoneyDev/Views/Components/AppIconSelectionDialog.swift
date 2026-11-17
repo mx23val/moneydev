@@ -24,18 +24,20 @@ public struct AppIconSelectionDialog: View {
                         .foregroundStyle(AppColors.textPrimary)
                     
                     HStack(spacing: 16) {
-                        // Ícono Clásico
+                        // Ícono Básico
                         iconOption(
-                            title: "Clásico Neón",
+                            title: "Modo Básico",
                             iconType: AppIconManager.iconClassic,
+                            imageName: "icon_basic",
                             colors: [Color(hex: "#00D2FF"), Color(hex: "#1D4ED8")],
                             isPro: false
                         )
                         
                         // Ícono Oro PRO
                         iconOption(
-                            title: "Oro 24K PRO",
+                            title: "Modo PRO",
                             iconType: AppIconManager.iconProGold,
+                            imageName: "icon_pro",
                             colors: [Color(hex: "#F59E0B"), Color(hex: "#78350F")],
                             isPro: true
                         )
@@ -67,13 +69,13 @@ public struct AppIconSelectionDialog: View {
         .presentationDetents([.medium])
     }
     
-    private func iconOption(title: String, iconType: String, colors: [Color], isPro: Bool) -> some View {
+    private func iconOption(title: String, iconType: String, imageName: String? = nil, colors: [Color], isPro: Bool) -> some View {
         let isSelected = currentIcon == iconType
         let isLocked = isPro && !isProUser
         
         return Button {
             if isLocked {
-                alertMessage = "El ícono Oro 24K es exclusivo de la versión PRO."
+                alertMessage = "El ícono Modo PRO es exclusivo de los usuarios PRO."
                 showAlert = true
             } else {
                 Task {
@@ -84,14 +86,26 @@ public struct AppIconSelectionDialog: View {
         } label: {
             VStack(spacing: 10) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 72, height: 72)
-                        .shadow(color: colors.first?.opacity(0.4) ?? .clear, radius: 8)
-                    
-                    Image(systemName: isPro ? "crown.fill" : "dollarsign.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundStyle(.white)
+                    if let imageName, let uiImg = UIImage(named: imageName) {
+                        Image(uiImage: uiImg)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 72, height: 72)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(AppColors.cardBorderNavy, lineWidth: 1)
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(LinearGradient(colors: colors, startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 72, height: 72)
+                            .shadow(color: colors.first?.opacity(0.4) ?? .clear, radius: 8)
+                        
+                        Image(systemName: isPro ? "crown.fill" : "dollarsign.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.white)
+                    }
                     
                     if isSelected {
                         VStack {

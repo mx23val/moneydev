@@ -80,6 +80,9 @@ public struct InitialBalanceDialog: View {
                                 .font(.system(size: 32, weight: .black, design: .rounded))
                                 .foregroundStyle(AppColors.textPrimary)
                                 .keyboardType(.decimalPad)
+                                .onChange(of: balanceInput) { _, newValue in
+                                    balanceInput = FormatHelper.validateMoneyInput(newValue)
+                                }
                         }
                         .padding(14)
                         .background(AppColors.darkNavySurface)
@@ -117,6 +120,7 @@ public struct InitialBalanceDialog: View {
                     .foregroundStyle(AppColors.textSecondary)
                 }
             }
+            .numpadDismissDoneButton()
         }
         .presentationDetents([.medium])
     }

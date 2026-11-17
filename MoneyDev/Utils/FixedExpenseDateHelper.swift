@@ -64,11 +64,19 @@ public enum FixedExpenseDateHelper {
         
         guard var due = cal.date(from: comp) else { return fromDate }
         
+        let lastPaidDate: Date? = expense.lastPaidDateMillis > 0 ? Date(timeIntervalSince1970: Double(expense.lastPaidDateMillis) / 1000.0) : nil
+        
         switch expense.frequency {
         case .daily:
+            if let lastPaid = lastPaidDate, cal.isDate(lastPaid, inSameDayAs: fromDate) {
+                return cal.date(byAdding: .day, value: 1, to: due) ?? due
+            }
             return due
             
         case .everyTwoDays:
+            if let lastPaid = lastPaidDate, cal.isDate(lastPaid, inSameDayAs: fromDate) {
+                return cal.date(byAdding: .day, value: 2, to: due) ?? due
+            }
             let anchor = Date(timeIntervalSince1970: Double(expense.createdAt) / 1000.0)
             let diffDays = cal.dateComponents([.day], from: anchor, to: due).day ?? 0
             if diffDays % 2 != 0 {
@@ -81,7 +89,18 @@ public enum FixedExpenseDateHelper {
             let currentWeekday = cal.component(.weekday, from: due)
             var daysUntil = targetWeekday - currentWeekday
             if daysUntil < 0 { daysUntil += 7 }
-            return cal.date(byAdding: .day, value: daysUntil, to: due) ?? due
+            let candidate = cal.date(byAdding: .day, value: daysUntil, to: due) ?? due
+            
+            if let lastPaid = lastPaidDate {
+                let lastPaidWeek = cal.component(.weekOfYear, from: lastPaid)
+                let lastPaidYear = cal.component(.yearForWeekOfYear, from: lastPaid)
+                let candWeek = cal.component(.weekOfYear, from: candidate)
+                let candYear = cal.component(.yearForWeekOfYear, from: candidate)
+                if lastPaidWeek == candWeek && lastPaidYear == candYear {
+                    return cal.date(byAdding: .day, value: 7, to: candidate) ?? candidate
+                }
+            }
+            return candidate
             
         case .monthly:
             let currentYear = cal.component(.year, from: due)
@@ -95,7 +114,14 @@ public enum FixedExpenseDateHelper {
             monthComp.second = 0
             
             if let monthDate = cal.date(from: monthComp) {
-                if monthDate < fromDate && !cal.isDate(monthDate, inSameDayAs: fromDate) {
+                let isAlreadyPaidThisMonth: Bool = {
+                    guard let lastPaid = lastPaidDate else { return false }
+                    let lpYear = cal.component(.year, from: lastPaid)
+                    let lpMonth = cal.component(.month, from: lastPaid)
+                    return lpYear == currentYear && lpMonth == currentMonth
+                }()
+                
+                if isAlreadyPaidThisMonth || (monthDate < fromDate && !cal.isDate(monthDate, inSameDayAs: fromDate)) {
                     return cal.date(byAdding: .month, value: 1, to: monthDate) ?? monthDate
                 }
                 return monthDate
@@ -116,7 +142,12 @@ public enum FixedExpenseDateHelper {
             yearComp.second = 0
             
             if var yearDate = cal.date(from: yearComp) {
-                if yearDate < fromDate && !cal.isDate(yearDate, inSameDayAs: fromDate) {
+                let isAlreadyPaidThisYear: Bool = {
+                    guard let lastPaid = lastPaidDate else { return false }
+                    return cal.component(.year, from: lastPaid) == currentYear
+                }()
+                
+                if isAlreadyPaidThisYear || (yearDate < fromDate && !cal.isDate(yearDate, inSameDayAs: fromDate)) {
                     yearDate = cal.date(byAdding: .year, value: 1, to: yearDate) ?? yearDate
                 }
                 return yearDate
@@ -139,6 +170,14 @@ public enum FixedExpenseDateHelper {
         case .sameDay:
             return cal.isDate(todayDate, inSameDayAs: nextDue)
         }
+    }
+    
+    public static func isPaidForCurrentPeriod(expense: FixedExpense, currentDate: Date = Date()) -> Bool {
+        guard expense.lastPaidDateMillis > 0 else { return false }
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = peruTimeZone
+        let lastPaid = Date(timeIntervalSince1970: Double(expense.lastPaidDateMillis) / 1000.0)
+        return isSamePeriod(expense: expense, d1: lastPaid, d2: currentDate, cal: cal)
     }
     
     public static func isExpensePaidForCurrentCycle(
@@ -177,7 +216,9 @@ public enum FixedExpenseDateHelper {
         case .daily:
             return cal.isDate(d1, inSameDayAs: d2)
         case .everyTwoDays:
-            let diff = cal.dateComponents([.day], from: d1, to: d2).day ?? 0
+            let start1 = cal.startOfDay(for: d1)
+            let start2 = cal.startOfDay(for: d2)
+            let diff = cal.dateComponents([.day], from: start1, to: start2).day ?? 0
             return abs(diff) < 2
         case .weekly:
             return cal.component(.yearForWeekOfYear, from: d1) == cal.component(.yearForWeekOfYear, from: d2) &&

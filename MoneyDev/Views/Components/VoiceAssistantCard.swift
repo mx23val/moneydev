@@ -1,9 +1,11 @@
 import SwiftUI
 
 public struct VoiceAssistantCard: View {
+    let theme: AppColorTheme
     let onOpenChat: () -> Void
     
-    public init(onOpenChat: @escaping () -> Void) {
+    public init(theme: AppColorTheme = .electricBlue, onOpenChat: @escaping () -> Void) {
+        self.theme = theme
         self.onOpenChat = onOpenChat
     }
     
@@ -14,7 +16,7 @@ public struct VoiceAssistantCard: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [Color(hex: "#00D2FF"), Color(hex: "#1D4ED8")],
+                                colors: theme.gradient,
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -34,10 +36,10 @@ public struct VoiceAssistantCard: View {
                         
                         Text("Asistente")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color(hex: "#38BDF8"))
+                            .foregroundStyle(theme.primary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color(hex: "#38BDF8").opacity(0.15))
+                            .background(theme.primary.opacity(0.15))
                             .clipShape(Capsule())
                     }
                     
@@ -58,7 +60,7 @@ public struct VoiceAssistantCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color(hex: "#00D2FF").opacity(0.3), lineWidth: 1)
+                    .stroke(theme.primary.opacity(0.25), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

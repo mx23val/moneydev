@@ -1,0 +1,11 @@
+//
+// MoneyDev - Config.xcconfig.example
+// ===================================
+// Plantilla para configuración de variables de compilación en Xcode.
+// Para usar:
+// 1. Duplica este archivo como "Config.xcconfig"
+// 2. Asigna tu API Key de Gemini
+// 3. Config.xcconfig está ignorado en .gitignore
+//
+
+GEMINI_API_KEY = YOUR_GEMINI_API_KEY_HERE

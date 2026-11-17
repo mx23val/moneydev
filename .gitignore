@@ -1,0 +1,71 @@
+# ==============================================================================
+# MoneyDev - .gitignore (Xcode, SwiftUI, SwiftData, macOS, Seguridad)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Xcode & Archivos de Usuario / Temporales
+# ------------------------------------------------------------------------------
+build/
+DerivedData/
+*.moved-aside
+*.xcuserstate
+*.xcscmblueprint
+xcuserdata/
+*.xcuserdatad/
+*.xcdebugger/
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# ------------------------------------------------------------------------------
+# macOS y Sistema Operativo
+# ------------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ------------------------------------------------------------------------------
+# Swift Package Manager & Dependencias
+# ------------------------------------------------------------------------------
+.build/
+Packages/
+Package.pins
+
+# ------------------------------------------------------------------------------
+# CocoaPods & Carthage (si aplican)
+# ------------------------------------------------------------------------------
+Pods/
+Carthage/Build/
+
+# ------------------------------------------------------------------------------
+# Seguridad, Credenciales y Archivos de Secretos (CRÍTICO)
+# ------------------------------------------------------------------------------
+Secrets.plist
+Config.xcconfig
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p8
+*.p12
+*.mobileprovision
+*.provisionprofile
+
+# Permitir explícitamente las plantillas de ejemplo
+!Secrets.plist.example
+!Config.xcconfig.example
+!.env.example
+
+# ------------------------------------------------------------------------------
+# Respaldos de Código y Dumps Temporales
+# ------------------------------------------------------------------------------
+CodigoCompletoMoneyDev.txt
+*.bak
+*.tmp
+*.log
